@@ -8,7 +8,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,6 +24,10 @@ public class RemoteServer {
             List<Clients> nowClients = new ArrayList<>();
             // 创建一个线程池
             ExecutorService threadPool = Executors.newFixedThreadPool(50);
+            // 获取一下时间
+            SimpleDateFormat format = new SimpleDateFormat();
+            format.applyPattern("yyyy-MM-dd HH:mm:ss");
+            Calendar calendar = Calendar.getInstance();
             // 开启循环等待客户端连接
             while (true) {
                 // 等待客户端连接
@@ -57,14 +63,15 @@ public class RemoteServer {
                             
                         } else {
                             String[] params = helloInfo.split("-");
+
                             // 将主机添加到在线列表中
                             if (params[0].equals("Hi")) {
                                 // 主机上线
-                                System.out.println("DEBUG====> 有一台主机上线：" + helloInfo);
+                                System.out.println("DEBUG====> 有一台主机上线：" + helloInfo + " " + format.format(calendar.getTime()));
                                 nowClients.add(new Clients(params[1], params[2], true));
                             } else if (params[0].equals("Bye")) {
                                 // 主机下线
-                                System.out.println("DEBUG====> 有一台主机下线：" + helloInfo);
+                                System.out.println("DEBUG====> 有一台主机下线：" + helloInfo + " " + format.format(calendar.getTime()));
                                 for (Clients client : nowClients) {
                                     if (client.getIp().equals(params[1]) && client.getName().equals(params[2])) {
                                         client.setState(false);

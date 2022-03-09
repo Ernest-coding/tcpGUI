@@ -2,26 +2,13 @@ package com.ernest.gui;
 
 import com.ernest.tcp.host.client.ClientMes;
 import com.ernest.tcp.host.remoteClient.RemoteClient;
-import com.ernest.tcp.host.server.ServerMesRunnable;
-import com.ernest.tcp.utils.StreamUtils;
+import com.ernest.tcp.host.server.HostMesServer;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.InputStream;
-import java.lang.invoke.VolatileCallSite;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.awt.event.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class MainWindow {
     private JPanel mainPanel;
@@ -47,11 +34,12 @@ public class MainWindow {
     private volatile JLabel jl_message;
     private volatile JLabel jl_nowTime;
     private volatile JLabel jl_nowTimeText;
-    private JButton jb_flushList;
+    private volatile JButton jb_flushList;
     private volatile JFileChooser jf_fileChoose;
     
     private ClientMes clientMes;
-    private List<String> onlines;
+
+    private Boolean status = false;
     
     public MainWindow() {
         init();
@@ -65,8 +53,8 @@ public class MainWindow {
      */
     public void init() {
         // 系统初始化
-        parseSetNowTime();
-        onlines = new ArrayList<>();
+        new SetTimeUtil().getTimeWorker(jl_nowTime).execute();
+
     }
     
     /**
@@ -74,7 +62,6 @@ public class MainWindow {
      */
     public void parseLogIn(String hostName) {
         System.out.println("Debug==>  用户操作登录");
-        System.out.println(hostName);
         // 登录
         RemoteClient.logInNoti(hostName);
         // 获取在线列表
@@ -82,21 +69,27 @@ public class MainWindow {
         // 解析在线列表并添加进 gui 在线列表中
         jlt_onlineList.setListData(onlineInfo);
         jl_message.setText("登陆成功，已获取到在线用户列表 ~");
-        
-        // 启动服务监听
-        parseBackgroundServer();
+        // 启动服务监听子线程
+        new HostMesServer().getServerWorker(jl_showRemoteInfo, jt_inputRemoteIp, jta_showChat).execute();
+        // 启动自动刷新列表子线程
+        new SetOnlineUtil().getFlushWorker(jlt_onlineList).execute();
     }
     
     /**
      * 处理注销事件
      */
-    public void parseLogOut() {
+    public void parseLogOut(String hostName) {
         System.out.println("Debug==>  用户操作注销");
         try {
-            parseSendMes("bye");
+            if(clientMes != null){
+                parseSendMes("bye");
+            }
+            RemoteClient.logOutNoti(hostName);
+            status = false;
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
     
     /**
@@ -107,6 +100,8 @@ public class MainWindow {
     public void parseConnect(String ip) throws Exception {
         System.out.println("Debug==>  连接远程主机");
         clientMes = new ClientMes(ip);
+        status = true;
+        jl_message.setText("连接 " + jt_inputRemoteIp.getText() + " 成功!");
     }
     
     /**
@@ -114,7 +109,8 @@ public class MainWindow {
      */
     public void parseDelete() throws Exception {
         System.out.println("Debug==>  远程主机断开");
-        parseLogOut();
+        parseSendMes("bye");
+        status = false;
         clientMes.releaseSource();
         jta_showChat.setText(jta_showChat.getText() + "【系统消息: 你已单方面断开与对方的连接】");
         jl_message.setText("已断开与远程主机的连接!");
@@ -164,105 +160,6 @@ public class MainWindow {
         passiveConnectWorker.execute();
     }
     
-    /**
-     * 处理后台监听 9998 消息通信端口
-     */
-    public void parseBackgroundServer() {
-        SwingWorker<Boolean, String> serverWorker = new SwingWorker<>() {
-            @Override
-            protected Boolean doInBackground() throws Exception {
-                ServerSocket serverSocket = new ServerSocket(9998);
-                System.out.println("正在监听 9998 端口，等待消息通信......");
-                String chatInfo = "";
-                String name;
-                while (true) {
-                    System.out.println("测试信息");
-                    Socket socket = serverSocket.accept();
-                    System.out.println(socket.getInetAddress().getHostAddress() + "已连接");
-                    // 同时建立反方向的传输信道
-                    // TODO: 单机模式跑的话，没法建立反方向，因为一个发送消息端口无法同时连
-//                    parsePassiveConnect(socket.getInetAddress().getHostAddress());
-                    InputStream inputStream = socket.getInputStream();
-                    while (true) {
-                        name = jl_showRemoteInfo.getText();
-//                        System.out.println("当前用户名未  " + name);
-                        if (name.contains("--")) {
-                            name = name.split("--")[1];
-                        } else {
-                            name = "系统信息";
-                        }
-                        
-                        if (inputStream.available() > 0) {
-                            String info = StreamUtils.streamToString(inputStream);
-                            if (socket.getInetAddress().getHostAddress().equals(jt_inputRemoteIp.getText())) {
-                                chatInfo = name + " : " + info;
-                            } else {
-                                chatInfo = socket.getInetAddress().getHostAddress() + " : " + info;
-                            }
-                            publish(chatInfo);
-                            if (info.equals("bye")) {
-                                break;
-                            }
-                        }
-                    }
-                    chatInfo = jta_showChat.getText() + "\n" +
-                            "【系统消息: 对方已结束本次通话，你可以继续给对方发消息或输入 bye 向对方告别】";
-                    publish(chatInfo);
-                    inputStream.close();
-                    socket.close();
-                    serverSocket.close();
-                    return true;
-                }
-            }
-            
-            protected void done(){
-                boolean status;
-                try {
-                    status = get();
-                    System.out.println("后台监听线程结束");
-                } catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-            
-            @Override
-            protected void process(List<String> infos){
-                for (String info : infos) {
-//                    jta_showChat.setText(jta_showChat.getText() + "\n" + infos.toString());
-                    jta_showChat.setText(jta_showChat.getText() + "\n  ~~" + infos.get(0));
-                    
-                }
-            }
-            
-        };
-        serverWorker.execute();
-    }
-    
-    /**
-     * 设置当前时间
-     */
-    public void parseSetNowTime(){
-        SwingWorker<Boolean, String> setTimeWorker = new SwingWorker<>(){
-            @Override
-            protected Boolean doInBackground() throws Exception {
-                SimpleDateFormat format = new SimpleDateFormat();
-//                format.applyPattern("yyyy-MM-dd HH:mm:ss");
-                format.applyPattern("yyyy-MM-dd");
-                Calendar calendar = Calendar.getInstance();
-                publish(format.format(calendar.getTime()));
-                return true;
-            }
-            
-            @Override
-            protected void process(List<String> times){
-                for (String time : times) {
-                    jl_nowTime.setText(time);
-                }
-            }
-        };
-        setTimeWorker.execute();
-    }
-    
     
     /**
      * 批量添加事件监听
@@ -308,25 +205,33 @@ public class MainWindow {
         jb_send.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                String message = jta_chat.getText();
-                if (!message.contains("file:")) {
-                    try {
-                        parseSendMes(message);
-                    } catch (Exception exception) {
-                        exception.printStackTrace();
+                if (status) {
+                    String message = jta_chat.getText();
+                    if (!message.contains("file:")) {
+                        try {
+                            parseSendMes(message);
+                        } catch (Exception exception) {
+                            exception.printStackTrace();
+                        }
+                    } else {
+                        parseSendFile(jta_chat.getText().substring(5));
+
                     }
-                } else {
-                    parseSendFile(jta_chat.getText().substring(5));
-                    
+                    jta_chat.setText("");
+                }else{
+                    jl_message.setText("请先连接用户，然后再发送消息! ");
                 }
-                jta_chat.setText("");
+
+
             }
         });
         jlt_onlineList.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
-                jt_inputRemoteIp.setText(jlt_onlineList.getSelectedValue().split("---")[1]);
-                jl_showRemoteInfo.setText("对方身份--" + jlt_onlineList.getSelectedValue().split("---")[0]);
+                if (jlt_onlineList.getSelectedValue() != null){
+                    jt_inputRemoteIp.setText(jlt_onlineList.getSelectedValue().split("---")[1]);
+                    jl_showRemoteInfo.setText("对方身份--" + jlt_onlineList.getSelectedValue().split("---")[0]);
+                }
             }
         });
         jb_flushList.addActionListener(new ActionListener() {
@@ -342,10 +247,33 @@ public class MainWindow {
     
     public static void main(String[] args) {
         JFrame frame = new JFrame("普联");
-        frame.setContentPane(new MainWindow().allPanel);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        MainWindow mainWindow = new MainWindow();
+        frame.setContentPane(mainWindow.allPanel);
+//        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setBounds(600, 250, 700, 500);
         frame.setResizable(false);
+        frame.addWindowListener(new WindowListener() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                frame.setVisible(false);
+                String hostName = mainWindow.jt_inputHostName.getText();
+                mainWindow.parseLogOut((hostName != null) ? hostName : "disMach");
+                System.exit(0);
+            }
+            @Override
+            public void windowOpened(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {}
+            @Override
+            public void windowIconified(WindowEvent e) {}
+            @Override
+            public void windowDeiconified(WindowEvent e) {}
+            @Override
+            public void windowActivated(WindowEvent e) {}
+            @Override
+            public void windowDeactivated(WindowEvent e) {}
+        });
         frame.setVisible(true);
     }
+
 }

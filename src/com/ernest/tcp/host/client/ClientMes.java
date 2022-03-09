@@ -6,18 +6,20 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
 public class ClientMes {
+    private Boolean status = false;
     private Socket socket;
     OutputStream outputStream;
-    
+
     public ClientMes(String ip) {
         try {
             this.socket = new Socket(ip, 9998);
+            status = true;
             outputStream = socket.getOutputStream();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-    
+
     public void sendMes(String message) {
         if (message != null) {
             try {
@@ -28,9 +30,18 @@ public class ClientMes {
             }
         }
     }
-    
-    public void releaseSource(){
+
+    public Boolean getStatus() {
+        return status;
+    }
+
+    public void setStatus(Boolean status) {
+        this.status = status;
+    }
+
+    public void releaseSource() {
         try {
+            status = false;
             outputStream.close();
             socket.close();
         } catch (IOException e) {

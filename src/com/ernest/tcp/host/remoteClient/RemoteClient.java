@@ -20,6 +20,7 @@ public class RemoteClient {
             ip = InetAddress.getLocalHost();
 //            ip = InetAddress.getByAddress("115.25.45.90");
 //            ip = InetAddress.getByName("ernest.work");
+            System.out.println(ip);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
@@ -32,10 +33,10 @@ public class RemoteClient {
         try {
             // 建立连接
             Socket socket = new Socket(ip, remotePort);
-//            Socket socket = new Socket("115.25.45.90", remotePort);
+//            Socket socket = new Socket("10.23.72.242", remotePort);
             // 获取本机信息并制作辅机问候信息
             String info = "Hi-" + InetAddress.getLocalHost().getHostAddress() + "-" + hostName;
-            System.out.println("准备向辅机发送上线问候信息：" + info);
+            System.out.println("向服务器发送上线问候信息：" + info);
             // 获取输出流
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(info.getBytes(StandardCharsets.UTF_8));
@@ -52,15 +53,13 @@ public class RemoteClient {
     /**
      * 下线通知
      */
-    public static void logOutNoti() {
+    public static void logOutNoti(String hostName) {
         try {
             // 建立连接
             Socket socket = new Socket(ip, remotePort);
             // 获取本机信息并制作辅机问候信息
-            String info = "Bye-" +
-                    InetAddress.getLocalHost().getHostAddress() + "-" +
-                    InetAddress.getLocalHost().getHostName();
-            System.out.println("Debug===> 准备向辅机发送下线告别信息：" + info);
+            String info = "Bye-" + InetAddress.getLocalHost().getHostAddress() + "-" + hostName;
+            System.out.println("SystemDebug===> 向服务器发送下线告别信息：" + info);
             // 获取输出流
             OutputStream outputStream = socket.getOutputStream();
             outputStream.write(info.getBytes(StandardCharsets.UTF_8));
@@ -86,7 +85,7 @@ public class RemoteClient {
             Socket socket = new Socket(ip, remotePort);
             // 发送请求信息
             OutputStream outputStream = socket.getOutputStream();
-            System.out.println("Debug===> 向辅机发送请求信息：getNowClients");
+            System.out.println("SystemDebug===> 向服务器请求获取在线列表");
             outputStream.write("getNowClients".getBytes(StandardCharsets.UTF_8));
             outputStream.flush();
             // 每次发送完信息必须要调用这个标志，否则服务端会一直等待
@@ -94,6 +93,11 @@ public class RemoteClient {
             InputStream inputStream = socket.getInputStream();
             String onlineInfo = StreamUtils.streamToString(inputStream);
             machineList = onlineInfo.split(";");
+            if (machineList[0] != null) {
+                System.out.println("SystemDebug===> 获取在线列表 成功");
+            }else{
+                System.out.println("SystemDebug===> 获取在线列表 失败");
+            }
             // 关闭相关资源
             inputStream.close();
             outputStream.close();
