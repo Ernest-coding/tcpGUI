@@ -65,7 +65,7 @@ public class HostMesServer {
                 boolean status;
                 try {
                     status = get();
-                    System.out.println("后台监听线程结束");
+                    System.out.println("MesDEBUG==>  后台消息监听线程结束");
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }

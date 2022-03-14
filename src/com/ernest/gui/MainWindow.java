@@ -1,13 +1,16 @@
 package com.ernest.gui;
 
+import com.ernest.tcp.host.client.ClientFile;
 import com.ernest.tcp.host.client.ClientMes;
 import com.ernest.tcp.host.remoteClient.RemoteClient;
+import com.ernest.tcp.host.server.HostFileServer;
 import com.ernest.tcp.host.server.HostMesServer;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.event.*;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 public class MainWindow {
@@ -38,9 +41,11 @@ public class MainWindow {
     private volatile JFileChooser jf_fileChoose;
     
     private ClientMes clientMes;
-
+    private ClientFile clientFile;
     private Boolean status = false;
-    
+    private String filePath;
+    private String fileName;
+
     public MainWindow() {
         init();
         actionListener();
@@ -54,7 +59,8 @@ public class MainWindow {
     public void init() {
         // 系统初始化
         new SetTimeUtil().getTimeWorker(jl_nowTime).execute();
-
+        filePath = Objects.requireNonNull(MainWindow.class.getResource("/")).getPath();
+        fileName = "默认文件";
     }
     
     /**
@@ -69,8 +75,10 @@ public class MainWindow {
         // 解析在线列表并添加进 gui 在线列表中
         jlt_onlineList.setListData(onlineInfo);
         jl_message.setText("登陆成功，已获取到在线用户列表 ~");
-        // 启动服务监听子线程
+        // 启动消息服务监听子线程
         new HostMesServer().getMesServerWorker(jl_showRemoteInfo, jt_inputRemoteIp, jta_showChat).execute();
+        // 启动文件服务监听子线程
+        new HostFileServer().getFileServerWorker(jta_showChat, filePath, fileName).execute();
         // 启动自动刷新列表子线程
         new SetOnlineUtil().getFlushWorker(jlt_onlineList).execute();
     }
@@ -135,7 +143,10 @@ public class MainWindow {
      */
     public void parseSendFile(String filePath) {
         System.out.println("Debug==>  发送文件");
-        System.out.println(filePath);
+        clientFile = new ClientFile(jt_inputRemoteIp.getText());
+        clientFile.getFileSender(filePath, jta_showChat).execute();
+        clientFile.finishSend();
+        clientFile = null;
     }
     
     /**
@@ -207,15 +218,15 @@ public class MainWindow {
             public void actionPerformed(ActionEvent e) {
                 if (status) {
                     String message = jta_chat.getText();
-                    if (!message.contains("file:")) {
-                        try {
-                            parseSendMes(message);
-                        } catch (Exception exception) {
-                            exception.printStackTrace();
+                    try {
+                        parseSendMes(message);
+                        if (message.contains("file:")) {
+                            String[] paths = message.split("\\\\");
+                            fileName = paths[paths.length - 1];
+                            parseSendFile(jta_chat.getText().substring(5));
                         }
-                    } else {
-                        parseSendFile(jta_chat.getText().substring(5));
-
+                    } catch (Exception exception) {
+                        exception.printStackTrace();
                     }
                     jta_chat.setText("");
                 }else{
