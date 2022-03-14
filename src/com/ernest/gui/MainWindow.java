@@ -70,7 +70,7 @@ public class MainWindow {
         jlt_onlineList.setListData(onlineInfo);
         jl_message.setText("登陆成功，已获取到在线用户列表 ~");
         // 启动服务监听子线程
-        new HostMesServer().getServerWorker(jl_showRemoteInfo, jt_inputRemoteIp, jta_showChat).execute();
+        new HostMesServer().getMesServerWorker(jl_showRemoteInfo, jt_inputRemoteIp, jta_showChat).execute();
         // 启动自动刷新列表子线程
         new SetOnlineUtil().getFlushWorker(jlt_onlineList).execute();
     }

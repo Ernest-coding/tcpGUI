@@ -13,18 +13,18 @@ import java.util.concurrent.ExecutionException;
  * 这是一个监听本地 9998 消息通信端口的子线程，用于实时获取其它连接
  */
 public class HostMesServer {
-    public SwingWorker<Boolean, String> getServerWorker(JLabel jl_showRemoteInfo, JTextField jt_inputRemoteIp,
-                                                        JTextArea jta_showChat){
+    public SwingWorker<Boolean, String> getMesServerWorker(JLabel jl_showRemoteInfo, JTextField jt_inputRemoteIp,
+                                                           JTextArea jta_showChat){
         return new SwingWorker<>() {
             @Override
             protected Boolean doInBackground() throws Exception {
                 ServerSocket serverSocket = new ServerSocket(9998);
-                System.out.println("正在监听 9998 端口，等待消息通信......");
+                System.out.println("Debug==> 正在监听 9998 端口，等待消息通信......");
                 String chatInfo = "";
                 String name;
                 while (true) {
                     Socket socket = serverSocket.accept();
-                    System.out.println(socket.getInetAddress().getHostAddress() + "已连接");
+                    System.out.println("Debug==> " + socket.getInetAddress().getHostAddress() + "已连接");
                     // 同时建立反方向的传输信道
                     // TODO: 单机模式跑的话，没法建立反方向，因为一个发送消息端口无法同时连
 //                    parsePassiveConnect(socket.getInetAddress().getHostAddress());
