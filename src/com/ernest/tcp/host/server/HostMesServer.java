@@ -1,6 +1,5 @@
 package com.ernest.tcp.host.server;
 
-import com.ernest.gui.MainWindow;
 import com.ernest.tcp.host.client.ClientMes;
 import com.ernest.tcp.utils.StreamUtils;
 
@@ -97,8 +96,8 @@ public class HostMesServer {
 
                     }else{
                         jta_showChat.setText(jta_showChat.getText() + "\n  ~~" + infos.get(0));
-                        if(info.contains("\\")){
-                            String[] paths = info.split("\\\\");
+                        if (info.contains("文件:")) {
+                            String[] paths = info.split("文件:");
                             String fileName = paths[paths.length - 1];
                             jl_message.setText("收到文件--" + fileName);
                         }
