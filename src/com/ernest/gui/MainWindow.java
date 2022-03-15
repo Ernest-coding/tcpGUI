@@ -38,6 +38,7 @@ public class MainWindow {
     private volatile JLabel jl_nowTime;
     private volatile JLabel jl_nowTimeText;
     private volatile JButton jb_flushList;
+    private JButton jb_clearChat;
     private volatile JFileChooser jf_fileChoose;
     
     public volatile ClientMes clientMes;
@@ -49,8 +50,7 @@ public class MainWindow {
     public MainWindow() {
         init();
         actionListener();
-    
-        
+
     }
     
     /**
@@ -261,6 +261,13 @@ public class MainWindow {
                 jlt_onlineList.setListData(onlineInfo);
             }
         });
+        jb_clearChat.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // 清空聊天窗口
+                jta_showChat.setText("");
+            }
+        });
     }
     
     public static void main(String[] args) {
@@ -268,8 +275,8 @@ public class MainWindow {
         MainWindow mainWindow = new MainWindow();
         frame.setContentPane(mainWindow.allPanel);
 //        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setBounds(600, 250, 700, 500);
-        frame.setResizable(false);
+        frame.setBounds(600, 250, 700, 600);
+//        frame.setResizable(false);
         frame.addWindowListener(new WindowListener() {
             @Override
             public void windowClosing(WindowEvent e) {

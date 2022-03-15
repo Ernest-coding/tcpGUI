@@ -44,7 +44,7 @@ public class HostFileServer {
                         BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(savePath+"\\"+fileName));
                         bos.write(bytes);
                         bos.close();
-                        chatInfo = "接收对方发送文件成功，保存到: " + savePath +"\\"+ fileName;
+                        chatInfo = "已接收到文件，保存到默认目录";
                         publish(chatInfo);
                         // 5. 向客户端回复收到文件
                         // 通过 socket 获取输出流，以字符方式处理
