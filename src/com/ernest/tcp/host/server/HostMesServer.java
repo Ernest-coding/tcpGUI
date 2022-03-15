@@ -1,5 +1,7 @@
 package com.ernest.tcp.host.server;
 
+import com.ernest.gui.MainWindow;
+import com.ernest.tcp.host.client.ClientMes;
 import com.ernest.tcp.utils.StreamUtils;
 
 import javax.swing.*;
@@ -14,7 +16,8 @@ import java.util.concurrent.ExecutionException;
  */
 public class HostMesServer {
     public SwingWorker<Boolean, String> getMesServerWorker(JLabel jl_showRemoteInfo, JTextField jt_inputRemoteIp,
-                                                           JTextArea jta_showChat){
+                                                           JTextArea jta_showChat, JButton jb_connect, ClientMes clientMes,
+                                                           JList<String> jlt_onlineList){
         return new SwingWorker<>() {
             @Override
             protected Boolean doInBackground() throws Exception {
@@ -26,8 +29,8 @@ public class HostMesServer {
                     Socket socket = serverSocket.accept();
                     System.out.println("Debug==> " + socket.getInetAddress().getHostAddress() + "已连接");
                     // 同时建立反方向的传输信道
-                    // TODO: 单机模式跑的话，没法建立反方向，因为一个发送消息端口无法同时连
-//                    parsePassiveConnect(socket.getInetAddress().getHostAddress());
+                    publish("connect#"+socket.getInetAddress().getHostAddress());
+
                     InputStream inputStream = socket.getInputStream();
                     while (true) {
                         name = jl_showRemoteInfo.getText();
@@ -62,9 +65,9 @@ public class HostMesServer {
             }
 
             protected void done(){
-                boolean status;
+                boolean connectStatus;
                 try {
-                    status = get();
+                    connectStatus = get();
                     System.out.println("MesDEBUG==>  后台消息监听线程结束");
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
@@ -74,9 +77,26 @@ public class HostMesServer {
             @Override
             protected void process(List<String> infos){
                 for (String info : infos) {
-//                    jta_showChat.setText(jta_showChat.getText() + "\n" + infos.toString());
-                    jta_showChat.setText(jta_showChat.getText() + "\n  ~~" + infos.get(0));
+                    if(info.contains("connect")){
+                        // 建立反向连接
+                        if(clientMes == null){
+                            String ip = info.split("#")[1];
+                            System.out.println("Debug==>  系统建立消息通信反向连接成功");
+                            int onlineNum = jlt_onlineList.getModel().getSize();
+                            for (int i = 0; i < onlineNum; i++) {
+                                String item = jlt_onlineList.getModel().getElementAt(i);
+                                if (item.contains(ip)) {
+                                    jlt_onlineList.setSelectedIndex(i);
+                                }
+                            }
+                            jb_connect.doClick();
+                        }else{
+                            System.out.println("Debug==>  系统建立消息通信反向连接失败，已有连接");
+                        }
 
+                    }else{
+                        jta_showChat.setText(jta_showChat.getText() + "\n  ~~" + infos.get(0));
+                    }
                 }
             }
         };

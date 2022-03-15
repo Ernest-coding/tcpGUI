@@ -13,15 +13,18 @@ import java.util.Scanner;
 public class RemoteClient {
     
     private static final Integer remotePort = 9999;
-    private static InetAddress ip;
-    
+//    private static InetAddress ip;
+    private static String ip;
+
     static {
         try {
-            ip = InetAddress.getLocalHost();
-//            ip = InetAddress.getByAddress("115.25.45.90");
+//            ip = InetAddress.getLocalHost();
+            ip = "115.25.45.172";   // 这是位于学校内的一台服务器
+//            ip = "10.23.72.242";
+//            ip = "10.39.141.254";
 //            ip = InetAddress.getByName("ernest.work");
             System.out.println(ip);
-        } catch (UnknownHostException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -95,6 +98,9 @@ public class RemoteClient {
             machineList = onlineInfo.split(";");
             if (machineList[0] != null) {
                 System.out.println("SystemDebug===> 获取在线列表 成功");
+//                for (String s : machineList) {
+//                    System.out.println(s);
+//                }
             }else{
                 System.out.println("SystemDebug===> 获取在线列表 失败");
             }

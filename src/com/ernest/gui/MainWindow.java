@@ -40,11 +40,11 @@ public class MainWindow {
     private volatile JButton jb_flushList;
     private volatile JFileChooser jf_fileChoose;
     
-    private ClientMes clientMes;
-    private ClientFile clientFile;
-    private Boolean status = false;
-    private String filePath;
-    private String fileName;
+    public volatile ClientMes clientMes;
+    private volatile ClientFile clientFile;
+    private volatile Boolean status = false;
+    private volatile String filePath;
+    private volatile String fileName;
 
     public MainWindow() {
         init();
@@ -59,6 +59,8 @@ public class MainWindow {
     public void init() {
         // 系统初始化
         new SetTimeUtil().getTimeWorker(jl_nowTime).execute();
+        // 设置在线列表只能单选
+        jlt_onlineList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         filePath = Objects.requireNonNull(MainWindow.class.getResource("/")).getPath();
         fileName = "默认文件";
     }
@@ -76,7 +78,8 @@ public class MainWindow {
         jlt_onlineList.setListData(onlineInfo);
         jl_message.setText("登陆成功，已获取到在线用户列表 ~");
         // 启动消息服务监听子线程
-        new HostMesServer().getMesServerWorker(jl_showRemoteInfo, jt_inputRemoteIp, jta_showChat).execute();
+        new HostMesServer().getMesServerWorker(jl_showRemoteInfo, jt_inputRemoteIp,
+                jta_showChat, jb_connect, clientMes, jlt_onlineList).execute();
         // 启动文件服务监听子线程
         new HostFileServer().getFileServerWorker(jta_showChat, filePath, fileName).execute();
         // 启动自动刷新列表子线程
@@ -117,12 +120,11 @@ public class MainWindow {
      */
     public void parseDelete() throws Exception {
         System.out.println("Debug==>  远程主机断开");
-        parseSendMes("bye");
         status = false;
         clientMes.releaseSource();
-        jta_showChat.setText(jta_showChat.getText() + "【系统消息: 你已单方面断开与对方的连接】");
+        jta_showChat.setText(jta_showChat.getText() + "\n" + "【系统消息: 你已单方面断开与对方的连接】");
         jl_message.setText("已断开与远程主机的连接!");
-        // TODO:这里要删除这个对象
+        clientMes = null;
     }
     
     /**
@@ -134,7 +136,9 @@ public class MainWindow {
         System.out.println("Debug==>  发送消息");
         jta_showChat.setText(jta_showChat.getText() + "\n  >> 我 : " + message);
         clientMes.sendMes(message);
-
+        if (message.contains("bye")) {
+            parseDelete();
+        }
     }
     
     /**
