@@ -1,6 +1,7 @@
 package com.ernest.tcp.host.server;
 
 
+import com.ernest.gui.MainWindow;
 import com.ernest.tcp.utils.StreamUtils;
 
 import javax.swing.*;
@@ -8,13 +9,14 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 /**
  * 这是一个监听本地 9997 文件通信端口的子线程，用于实时获取其他连接
  */
 public class HostFileServer {
-    public SwingWorker<Boolean, String> getFileServerWorker(JTextArea jt_showChat, String filePath, String fileName){
+    public SwingWorker<Boolean, String> getFileServerWorker(JTextArea jt_showChat,JLabel jl_message){
         return new SwingWorker<>() {
             @Override
             protected Boolean doInBackground() throws Exception {
@@ -29,11 +31,16 @@ public class HostFileServer {
                     BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
                     try {
                         byte[] bytes = StreamUtils.streamToByteArray(bis);  // 现在已经拿到了客户端发来的文件的字节数组
-                        // 4. 将得到的字节数组转换成文件，写入到本地项目根目录，文件名由调用方传过来
-                        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath+"\\"+fileName));
+                        // 4. 将得到的字节数组转换成文件，写入到本地项目 files 目录
+                        String savePath = Objects.requireNonNull(MainWindow.class.getResource("/")).getPath() + "\\receives";
+                        String fileName = "默认文件名";
+                        if (jl_message.getText().contains("--")) {
+                            fileName = jl_message.getText().split("--")[1];
+                        }
+                        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(savePath+"\\"+fileName));
                         bos.write(bytes);
                         bos.close();
-                        chatInfo = "接收对方发送文件成功，保存到: " + filePath + fileName;
+                        chatInfo = "接收对方发送文件成功，保存到: " + savePath +"\\"+ fileName;
                         publish(chatInfo);
                         // 5. 向客户端回复收到文件
                         // 通过 socket 获取输出流，以字符方式处理

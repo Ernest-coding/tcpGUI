@@ -40,7 +40,7 @@ public class ClientFile {
                     BufferedOutputStream bos = new BufferedOutputStream(outputStream);
                     bos.write(bytes);   // 将文件对应的字节数组的内容写入到数据通道
                     bis.close();
-                    socket.shutdownOutput();    // 设置写入数据的结束标志
+                    socket.        shutdownOutput();    // 设置写入数据的结束标志
 
                     // 接收从服务端回复的消息
                     InputStream inputStream = socket.getInputStream();
@@ -48,7 +48,7 @@ public class ClientFile {
                     System.out.println(info);
                     inputStream.close();
                     // 关闭相关的流
-                    bos.close();
+//                    bos.close();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -59,7 +59,9 @@ public class ClientFile {
                 try {
                     String info = get();
                     jta_showChat.setText(jta_showChat.getText() + "\n" + "【系统提示: " + info + "】");
-                } catch (InterruptedException | ExecutionException e) {
+//                    outputStream.close();
+//                    socket.close();
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

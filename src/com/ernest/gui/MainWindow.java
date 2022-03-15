@@ -79,9 +79,9 @@ public class MainWindow {
         jl_message.setText("登陆成功，已获取到在线用户列表 ~");
         // 启动消息服务监听子线程
         new HostMesServer().getMesServerWorker(jl_showRemoteInfo, jt_inputRemoteIp,
-                jta_showChat, jb_connect, clientMes, jlt_onlineList).execute();
+                jta_showChat, jb_connect, clientMes, jlt_onlineList, jl_message).execute();
         // 启动文件服务监听子线程
-        new HostFileServer().getFileServerWorker(jta_showChat, filePath, fileName).execute();
+        new HostFileServer().getFileServerWorker(jta_showChat, jl_message).execute();
         // 启动自动刷新列表子线程
         new SetOnlineUtil().getFlushWorker(jlt_onlineList).execute();
     }
@@ -143,14 +143,14 @@ public class MainWindow {
     
     /**
      * 处理发送文件事件
-     * @param filePath 文件路径
+     * @param paths 文件路径
      */
-    public void parseSendFile(String filePath) {
+    public void parseSendFile(String paths) {
         System.out.println("Debug==>  发送文件");
         clientFile = new ClientFile(jt_inputRemoteIp.getText());
-        clientFile.getFileSender(filePath, jta_showChat).execute();
-        clientFile.finishSend();
-        clientFile = null;
+        clientFile.getFileSender(paths, jta_showChat).execute();
+//        clientFile.finishSend();
+//        clientFile = null;
     }
     
     /**
@@ -227,6 +227,7 @@ public class MainWindow {
                         if (message.contains("file:")) {
                             String[] paths = message.split("\\\\");
                             fileName = paths[paths.length - 1];
+                            jl_message.setText("发送文件--" + fileName);
                             parseSendFile(jta_chat.getText().substring(5));
                         }
                     } catch (Exception exception) {

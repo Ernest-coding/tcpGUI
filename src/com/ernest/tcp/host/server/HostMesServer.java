@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutionException;
 public class HostMesServer {
     public SwingWorker<Boolean, String> getMesServerWorker(JLabel jl_showRemoteInfo, JTextField jt_inputRemoteIp,
                                                            JTextArea jta_showChat, JButton jb_connect, ClientMes clientMes,
-                                                           JList<String> jlt_onlineList){
+                                                           JList<String> jlt_onlineList, JLabel jl_message){
         return new SwingWorker<>() {
             @Override
             protected Boolean doInBackground() throws Exception {
@@ -29,7 +29,7 @@ public class HostMesServer {
                     Socket socket = serverSocket.accept();
                     System.out.println("Debug==> " + socket.getInetAddress().getHostAddress() + "已连接");
                     // 同时建立反方向的传输信道
-                    publish("connect#"+socket.getInetAddress().getHostAddress());
+//                    publish("connect#"+socket.getInetAddress().getHostAddress());
 
                     InputStream inputStream = socket.getInputStream();
                     while (true) {
@@ -87,15 +87,21 @@ public class HostMesServer {
                                 String item = jlt_onlineList.getModel().getElementAt(i);
                                 if (item.contains(ip)) {
                                     jlt_onlineList.setSelectedIndex(i);
+                                    jb_connect.doClick();
                                 }
                             }
-                            jb_connect.doClick();
+
                         }else{
                             System.out.println("Debug==>  系统建立消息通信反向连接失败，已有连接");
                         }
 
                     }else{
                         jta_showChat.setText(jta_showChat.getText() + "\n  ~~" + infos.get(0));
+                        if(info.contains("\\")){
+                            String[] paths = info.split("\\\\");
+                            String fileName = paths[paths.length - 1];
+                            jl_message.setText("收到文件--" + fileName);
+                        }
                     }
                 }
             }
