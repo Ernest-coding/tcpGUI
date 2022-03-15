@@ -68,12 +68,15 @@ public class RemoteServer {
                             if (params[0].equals("Hi")) {
                                 // 主机上线
                                 System.out.println("DEBUG====> 有一台主机上线：" + helloInfo + " " + format.format(calendar.getTime()));
-                                nowClients.add(new Clients(params[1], params[2], true));
+
+//                                nowClients.add(new Clients(params[1], params[2], true));
+                                nowClients.add(new Clients(socket.getInetAddress().getHostAddress(), params[2], true));
                             } else if (params[0].equals("Bye")) {
                                 // 主机下线
                                 System.out.println("DEBUG====> 有一台主机下线：" + helloInfo + " " + format.format(calendar.getTime()));
                                 for (Clients client : nowClients) {
-                                    if (client.getIp().equals(params[1]) && client.getName().equals(params[2])) {
+                                    if (client.getIp().equals(socket.getInetAddress().getHostAddress()) && client.getName().equals(params[2])) {
+//                                    if (client.getIp().equals(params[1]) && client.getName().equals(params[2])) {
                                         client.setState(false);
                                     }
                                 }
