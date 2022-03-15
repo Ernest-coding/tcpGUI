@@ -58,7 +58,7 @@ public class ClientFile {
             protected void done(){
                 try {
                     String info = get();
-                    jta_showChat.setText(jta_showChat.getText() + "\n" + "【系统提示: " + info + "】");
+                    jta_showChat.setText(jta_showChat.getText() + "\n" + "【系统消息: " + info + "】");
 //                    outputStream.close();
 //                    socket.close();
                 } catch (Exception e) {

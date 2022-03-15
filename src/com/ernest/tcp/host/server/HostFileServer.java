@@ -32,7 +32,11 @@ public class HostFileServer {
                     try {
                         byte[] bytes = StreamUtils.streamToByteArray(bis);  // 现在已经拿到了客户端发来的文件的字节数组
                         // 4. 将得到的字节数组转换成文件，写入到本地项目 files 目录
-                        String savePath = Objects.requireNonNull(MainWindow.class.getResource("/")).getPath() + "\\receives";
+//                        String savePath = Objects.requireNonNull(MainWindow.class.getResource("/")).getPath() + "\\receives";
+                        File file = new File("");
+                        String savePath = file.getCanonicalPath() + "\\receives";
+                        file.delete();
+
                         String fileName = "默认文件名";
                         if (jl_message.getText().contains("--")) {
                             fileName = jl_message.getText().split("--")[1];
@@ -45,7 +49,7 @@ public class HostFileServer {
                         // 5. 向客户端回复收到文件
                         // 通过 socket 获取输出流，以字符方式处理
                         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                        writer.write("我已收到文件");
+                        writer.write("对方已收到文件");
                         writer.flush(); // 把内容刷新到数据通道
                         socket.shutdownOutput();    // 设置写入数据的结束标志
                         writer.close();

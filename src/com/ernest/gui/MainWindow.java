@@ -223,12 +223,14 @@ public class MainWindow {
                 if (status) {
                     String message = jta_chat.getText();
                     try {
-                        parseSendMes(message);
                         if (message.contains("file:")) {
                             String[] paths = message.split("\\\\");
                             fileName = paths[paths.length - 1];
                             jl_message.setText("发送文件--" + fileName);
+                            parseSendMes("我给你发送了一个文件: " + fileName);
                             parseSendFile(jta_chat.getText().substring(5));
+                        }else{
+                            parseSendMes(message);
                         }
                     } catch (Exception exception) {
                         exception.printStackTrace();
